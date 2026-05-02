@@ -75,6 +75,11 @@ bool feature_cts_eval(const std::string& json_path, int32_t grid_size)
   return featureInst->save_cts_eval(json_path, grid_size);
 }
 
+bool feature_gcell_patch_eval(const std::string& json_path, const std::string& stage)
+{
+  return featureInst->save_gcell_patch_eval(json_path, stage);
+}
+
 bool feature_timing_eval_summary(const std::string& path)
 {
   return featureInst->save_timing_eval_summary(path);
