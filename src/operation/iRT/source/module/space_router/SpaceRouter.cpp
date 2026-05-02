@@ -22,6 +22,58 @@
 
 namespace irt {
 
+namespace {
+
+double getOrientDemand(SRNode& sr_node, Orientation orient)
+{
+  double demand = 0;
+  if (!RTUTIL.exist(sr_node.get_orient_net_map(), orient)) {
+    return demand;
+  }
+  for (int32_t demand_net_idx : sr_node.get_orient_net_map()[orient]) {
+    if (RTUTIL.exist(sr_node.get_ignore_net_orient_map(), demand_net_idx)
+        && RTUTIL.exist(sr_node.get_ignore_net_orient_map()[demand_net_idx], orient)) {
+      continue;
+    }
+    demand += sr_node.get_boundary_wire_unit();
+  }
+  return demand;
+}
+
+double getOrientSupply(SRNode& sr_node, Orientation orient)
+{
+  if (!RTUTIL.exist(sr_node.get_orient_supply_map(), orient)) {
+    return 0;
+  }
+  return sr_node.get_orient_supply_map()[orient];
+}
+
+nlohmann::json makeNativeDemandCapacityJson(SRNode& sr_node, RoutingLayer& routing_layer, const std::string& direction, double demand,
+                                            double capacity)
+{
+  nlohmann::json record;
+  record["row"] = sr_node.get_y();
+  record["col"] = sr_node.get_x();
+  record["gcell"] = {{"x", sr_node.get_x()}, {"y", sr_node.get_y()}};
+  record["layer"] = routing_layer.get_layer_name();
+  record["layer_idx"] = routing_layer.get_layer_idx();
+  record["direction"] = direction;
+  record["demand"] = demand;
+  record["capacity"] = capacity;
+  record["demand_capacity"] = demand - capacity;
+  if (capacity == 0) {
+    record["utilization"] = nullptr;
+  } else {
+    record["utilization"] = demand / capacity;
+  }
+  record["overflow"] = std::max(0.0, demand - capacity);
+  record["source"] = "irt_space_router_native";
+  record["stage"] = "space_router_final";
+  return record;
+}
+
+}  // namespace
+
 // public
 
 void SpaceRouter::initInst()
@@ -1376,6 +1428,7 @@ void SpaceRouter::selectBestResult(SRModel& sr_model)
   outputGuide(sr_model);
   outputNetCSV(sr_model);
   outputOverflowCSV(sr_model);
+  outputNativeDemandCapacityJsonl(sr_model, "final");
   outputJson(sr_model);
 
   RTLOG.info(Loc::current(), "Completed", monitor.getStatsInfo());
@@ -1815,6 +1868,42 @@ void SpaceRouter::outputOverflowCSV(SRModel& sr_model)
     RTUTIL.closeFileStream(overflow_csv_file);
   }
   RTLOG.info(Loc::current(), "Completed", monitor.getStatsInfo());
+}
+
+std::string SpaceRouter::outputNativeDemandCapacityJsonl(SRModel& sr_model, const std::string& tag)
+{
+  std::vector<RoutingLayer>& routing_layer_list = RTDM.getDatabase().get_routing_layer_list();
+  std::string& sr_temp_directory_path = RTDM.getConfig().sr_temp_directory_path;
+
+  Monitor monitor;
+  RTLOG.info(Loc::current(), "Starting...");
+
+  std::string native_jsonl_file_path = RTUTIL.getString(sr_temp_directory_path, "route_native_demand_capacity_", tag, ".jsonl");
+  std::ofstream* native_jsonl_file = RTUTIL.getOutputFileStream(native_jsonl_file_path);
+  if (native_jsonl_file == nullptr) {
+    return native_jsonl_file_path;
+  }
+
+  std::vector<GridMap<SRNode>>& layer_node_map = sr_model.get_layer_node_map();
+  for (RoutingLayer& routing_layer : routing_layer_list) {
+    GridMap<SRNode>& sr_node_map = layer_node_map[routing_layer.get_layer_idx()];
+    for (int32_t x = 0; x < sr_node_map.get_x_size(); x++) {
+      for (int32_t y = 0; y < sr_node_map.get_y_size(); y++) {
+        SRNode& sr_node = sr_node_map[x][y];
+        double horizontal_demand = getOrientDemand(sr_node, Orientation::kEast) + getOrientDemand(sr_node, Orientation::kWest);
+        double horizontal_capacity = getOrientSupply(sr_node, Orientation::kEast) + getOrientSupply(sr_node, Orientation::kWest);
+        double vertical_demand = getOrientDemand(sr_node, Orientation::kSouth) + getOrientDemand(sr_node, Orientation::kNorth);
+        double vertical_capacity = getOrientSupply(sr_node, Orientation::kSouth) + getOrientSupply(sr_node, Orientation::kNorth);
+        (*native_jsonl_file) << makeNativeDemandCapacityJson(sr_node, routing_layer, "horizontal", horizontal_demand, horizontal_capacity).dump()
+                             << "\n";
+        (*native_jsonl_file) << makeNativeDemandCapacityJson(sr_node, routing_layer, "vertical", vertical_demand, vertical_capacity).dump()
+                             << "\n";
+      }
+    }
+  }
+  RTUTIL.closeFileStream(native_jsonl_file);
+  RTLOG.info(Loc::current(), "Completed", monitor.getStatsInfo());
+  return native_jsonl_file_path;
 }
 
 void SpaceRouter::outputJson(SRModel& sr_model)

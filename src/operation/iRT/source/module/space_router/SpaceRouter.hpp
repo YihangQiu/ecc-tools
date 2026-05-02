@@ -120,6 +120,7 @@ class SpaceRouter
   void outputGuide(SRModel& sr_model);
   void outputNetCSV(SRModel& sr_model);
   void outputOverflowCSV(SRModel& sr_model);
+  std::string outputNativeDemandCapacityJsonl(SRModel& sr_model, const std::string& tag);
   void outputJson(SRModel& sr_model);
   std::string outputNetJson(SRModel& sr_model);
   std::string outputOverflowJson(SRModel& sr_model);
