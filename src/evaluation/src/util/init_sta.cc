@@ -349,7 +349,7 @@ void InitSTA::callRT(const std::string& routing_type)
 
 void InitSTA::buildRCTree(const std::string& routing_type)
 {
-  LOG_FATAL_IF(routing_type != "WLM" && routing_type != "HPWL" && routing_type != "FLUTE" && routing_type != "SALT"
+  LOG_FATAL_IF(routing_type != "WLM" && routing_type != "HPWL" && routing_type != "ROUTED" && routing_type != "FLUTE" && routing_type != "SALT"
                && routing_type != "WireGraph")
       << "The routing type: " << routing_type << " is not supported.";
 
@@ -422,7 +422,7 @@ void InitSTA::buildRCTree(const std::string& routing_type)
       }
     }
 
-    if (routing_type == "HPWL") {
+    if (routing_type == "HPWL" || routing_type == "ROUTED") {
       auto loads = sta_net->getLoads();
 
       if (loads.empty()) {
@@ -432,10 +432,13 @@ void InitSTA::buildRCTree(const std::string& routing_type)
       auto* driver = sta_net->getDriver();
       auto driver_loc = idb_adapter->idbLocation(driver);
       auto front_node = STA_INST->makeOrFindRCTreeNode(driver);
+      const auto routed_wirelength = static_cast<double>(idb_net->wireLength()) / dbu;
+      const auto use_routed_wirelength = routing_type == "ROUTED" && routed_wirelength > 0.0;
 
       for (auto load : loads) {
         auto load_loc = idb_adapter->idbLocation(load);
-        auto wirelength = calc_length(driver_loc->get_x(), driver_loc->get_y(), load_loc->get_x(), load_loc->get_y());
+        auto wirelength = use_routed_wirelength ? routed_wirelength / loads.size()
+                                                : calc_length(driver_loc->get_x(), driver_loc->get_y(), load_loc->get_x(), load_loc->get_y());
         double res = calc_res(sta_net->isClockNet(), wirelength);
         double cap = calc_cap(sta_net->isClockNet(), wirelength);
         auto back_node = STA_INST->makeOrFindRCTreeNode(load);
