@@ -14,5 +14,6 @@ target_link_libraries(eval_congestion_eval
 target_include_directories(eval_congestion_eval
     PUBLIC
         ${EVAL_MODULE}/congestion
+        ${EVAL_API}
         ${EVAL_DATA}
 )

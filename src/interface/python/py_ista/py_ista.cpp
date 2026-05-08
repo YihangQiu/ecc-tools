@@ -29,6 +29,7 @@
 #include "idm.h"
 #include "log/Log.hh"
 #include "sta/Sta.hh"
+#include "timing_api.hh"
 namespace python_interface {
 
 namespace {
@@ -204,8 +205,22 @@ bool updateRCTreeInfo(const std::string& net_name)
 bool updateTiming()
 {
   auto* ista = ista::Sta::getOrCreateSta();
-  ista->buildGraph();
+  if (!ista->isBuildGraph()) {
+    ista->buildGraph();
+  }
   ista->updateTiming();
+  return true;
+}
+
+bool buildTimingRcTree(const std::string& routing_type)
+{
+  auto* timing_engine = ista::TimingEngine::getOrCreateTimingEngine();
+  auto* ista = ista::Sta::getOrCreateSta();
+  if (!ista->isBuildGraph()) {
+    timing_engine->buildGraph();
+    timing_engine->initRcTree();
+  }
+  TimingPower_API_INST->buildRCTree(routing_type);
   return true;
 }
 
@@ -309,7 +324,9 @@ bool reportTiming(int digits, const std::string& delay_type, std::vector<std::st
   }
 
   // Build graph
-  ista->buildGraph();
+  if (!ista->isBuildGraph()) {
+    ista->buildGraph();
+  }
 
   // Update timing
   ista->updateTiming();

@@ -12,6 +12,8 @@ target_link_libraries(ieda_feature
         feature_parser   
         feature_db
         feature_builder
+        eval_density_eval
+        eval_congestion_eval
 )
 
 target_include_directories(ieda_feature

@@ -73,6 +73,7 @@ class FeatureManager
   bool save_eval_union(std::string jsonl_path, std::string csv_path, int32_t grid_size);
   bool save_pl_eval(std::string json_path, int32_t grid_size = 1);
   bool save_cts_eval(std::string json_path, int32_t grid_size = 1);
+  bool save_gcell_patch_eval(std::string json_path, std::string stage);
 
  private:
   static FeatureManager* _instance;
