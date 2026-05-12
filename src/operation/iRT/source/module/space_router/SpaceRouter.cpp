@@ -66,7 +66,6 @@ nlohmann::json makeNativeDemandCapacityJson(SRNode& sr_node, RoutingLayer& routi
   } else {
     record["utilization"] = demand / capacity;
   }
-  record["overflow"] = std::max(0.0, demand - capacity);
   record["source"] = "irt_space_router_native";
   record["stage"] = "space_router_final";
   return record;
