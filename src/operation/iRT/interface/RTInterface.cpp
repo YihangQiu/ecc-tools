@@ -138,6 +138,15 @@ void RTInterface::runRT()
   RTSR.route();
   SpaceRouter::destroyInst();
 
+  if (RTDM.getConfig().stop_after_stage == "space_router") {
+    destroyFlute();
+    RTGP.destroy();
+    RTDE.destroy();
+
+    RTLOG.info(Loc::current(), "Completed after SpaceRouter", monitor.getStatsInfo());
+    return;
+  }
+
   TrackAssigner::initInst();
   RTTA.assign();
   TrackAssigner::destroyInst();
@@ -378,6 +387,7 @@ void RTInterface::wrapConfig(std::map<std::string, std::any>& config_map)
   RTDM.getConfig().output_inter_result = RTUTIL.getConfigValue<int32_t>(config_map, "-output_inter_result", 0);
   RTDM.getConfig().enable_notification = RTUTIL.getConfigValue<int32_t>(config_map, "-enable_notification", 0);
   RTDM.getConfig().enable_timing = RTUTIL.getConfigValue<int32_t>(config_map, "-enable_timing", 0);
+  RTDM.getConfig().stop_after_stage = RTUTIL.getConfigValue<std::string>(config_map, "-stop_after_stage", "");
   /////////////////////////////////////////////
 }
 

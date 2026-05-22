@@ -111,6 +111,10 @@ bool initConfigMapByJSON(const std::string& config, std::map<std::string, std::a
   config_map.insert(std::make_pair("-enable_timing", std::stoi(value)));
   value = ieda::getJsonData(json, {"RT", "-output_inter_result"});
   config_map.insert(std::make_pair("-output_inter_result", std::stoi(value)));
+  if (json.contains("RT") && json["RT"].contains("-stop_after_stage")) {
+    value = ieda::getJsonData(json, {"RT", "-stop_after_stage"});
+    config_map.insert(std::make_pair("-stop_after_stage", value));
+  }
   if (json.contains("RT") && json["RT"].contains("-enable_fast_mode")) {
     value = ieda::getJsonData(json, {"RT", "-enable_fast_mode"});
     config_map.insert(std::make_pair("-enable_fast_mode", std::stoi(value)));

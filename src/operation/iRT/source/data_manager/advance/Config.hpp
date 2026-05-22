@@ -34,6 +34,7 @@ class Config
   int32_t output_inter_result;       // optional
   int32_t enable_notification;       // optional
   int32_t enable_timing;             // optional
+  std::string stop_after_stage;      // optional
   /////////////////////////////////////////////
   // **********        RT         ********** //
   std::string log_file_path;         // building

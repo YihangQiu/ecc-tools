@@ -38,6 +38,8 @@ TclInitRT::TclInitRT(const char* cmd_name) : TclCmd(cmd_name)
   _config_list.push_back(std::make_pair("-enable_notification", ValueType::kInt));
   // int32_t enable_timing;                 // optional
   _config_list.push_back(std::make_pair("-enable_timing", ValueType::kInt));
+  // std::string stop_after_stage;          // optional
+  _config_list.push_back(std::make_pair("-stop_after_stage", ValueType::kString));
 
   TclUtil::addOption(this, _config_list);
 }
